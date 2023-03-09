@@ -1,4 +1,5 @@
 const std = @import("std");
+const raylib_build = @import("ext/raylib/src/build.zig");
 
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
@@ -6,6 +7,9 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+
+    const raylib = raylib_build.addRaylib(b, target, optimize);
+    raylib.install();
 
     const shared = b.addStaticLibrary(.{
         .name = "shared",
@@ -31,6 +35,11 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    exe.linkLibrary(shared);
+
+    exe.addIncludePath("ext/raylib/src");
+    exe.linkLibrary(raylib);
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
