@@ -2,6 +2,8 @@ const std = @import("std");
 const raylib_build = @import("ext/raylib/src/build.zig");
 const ext_build = @import("ext/build.zig");
 
+const cdb_path = "zig-cache/cdb";
+
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
@@ -9,12 +11,26 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const flags = [_][]const u8{
+        "-Wall",
+        "-Wextra",
+        "-Werror=return-type",
+        "-gen-cdb-fragment-path",
+        cdb_path,
+    };
+
+    const cflags = flags ++ [_][]const u8{
+        "-std=c99",
+    };
+    _ = cflags;
+    const cxxflags = flags ++ [_][]const u8{
+        "-std=c++17", "-fno-exceptions",
+    };
+
     // ---- vendor ----
 
     const raylib = raylib_build.addRaylib(b, target, optimize);
-    raylib.install();
     const yojimbo = ext_build.addYojimbo(b, target, optimize);
-    yojimbo.install();
 
     // ---- shared game logic ----
 
@@ -24,11 +40,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
-    // This declares intent for the library to be installed into the standard
-    // location when the user invokes the "install" step (the default step when
-    // running `zig build`).
-    shared.install();
 
     const shared_tests = b.addTest(.{
         .root_source_file = .{ .path = "shared/main.zig" },
@@ -98,7 +109,7 @@ pub fn build(b: *std.Build) void {
 
     server.addCSourceFiles(&.{
         "server/server.cpp",
-    }, &.{});
+    }, &cxxflags);
 
     // server.linkLibCPP();
     server.linkLibrary(yojimbo);
@@ -130,4 +141,43 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&shared_tests.step);
     test_step.dependOn(&client_tests.step);
     test_step.dependOn(&server_tests.step);
+
+    // ---- tooling ----
+
+    // const clean_cdb = b.addRemoveDirTree(cdb_path);
+
+    const cdb_step = b.step("cdb", "Create compile_commands.json");
+    cdb_step.makeFn = &makeCdb;
+    cdb_step.dependOn(&shared.step);
+    cdb_step.dependOn(&client.step);
+    cdb_step.dependOn(&server.step);
+}
+
+fn makeCdb(b: *std.Build.Step) !void {
+    var allocator = b.dependencies.allocator;
+
+    var cdb_file = try std.fs.cwd().createFile("compile_commands.json", .{ .truncate = true });
+    defer cdb_file.close();
+
+    _ = try cdb_file.write("[\n");
+    {
+        var dir = std.fs.cwd().openIterableDir(cdb_path, .{ .no_follow = true }) catch |err| {
+            std.debug.print("compilation database fragments dir `{s}` misssing\n", .{cdb_path});
+            return err;
+        };
+
+        var walker = try dir.walk(allocator);
+        defer walker.deinit();
+
+        while (try walker.next()) |entry| {
+            const ext = std.fs.path.extension(entry.basename);
+            if (std.mem.eql(u8, ext, ".json")) {
+                var json_file = try entry.dir.openFile(entry.basename, .{});
+                defer json_file.close();
+
+                try cdb_file.writeFileAllUnseekable(json_file, .{});
+            }
+        }
+    }
+    _ = try cdb_file.write("]\n");
 }
