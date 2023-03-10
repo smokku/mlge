@@ -1,5 +1,6 @@
 const std = @import("std");
 const raylib_build = @import("ext/raylib/src/build.zig");
+const ext_build = @import("ext/build.zig");
 
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
@@ -12,6 +13,8 @@ pub fn build(b: *std.Build) void {
 
     const raylib = raylib_build.addRaylib(b, target, optimize);
     raylib.install();
+    const yojimbo = ext_build.addYojimbo(b, target, optimize);
+    yojimbo.install();
 
     // ---- shared game logic ----
 

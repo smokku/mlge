@@ -1,3 +1,6 @@
 [submodule "ext/raylib"]
 	path = ext/raylib
 	url = https://github.com/raysan5/raylib.git
+[submodule "ext/yojimbo"]
+	path = ext/yojimbo
+	url = https://github.com/networkprotocol/yojimbo.git
