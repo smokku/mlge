@@ -89,11 +89,19 @@ pub fn build(b: *std.Build) void {
 
     const server = b.addExecutable(.{
         .name = "server",
-        .root_source_file = .{ .path = "server/main.zig" },
+        // .root_source_file = .{ .path = "server/main.zig" },
         .target = target,
         .optimize = optimize,
     });
 
+    server.addIncludePath("ext/yojimbo");
+
+    server.addCSourceFiles(&.{
+        "server/server.cpp",
+    }, &.{});
+
+    // server.linkLibCPP();
+    server.linkLibrary(yojimbo);
     server.linkLibrary(shared);
 
     server.install();

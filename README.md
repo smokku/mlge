@@ -14,10 +14,10 @@ This project makes use of git submodules, so you need to `git clone --recursive`
 
 ## Running
 
-Client
-
-    zig build client
-
 Server
 
     zig build server
+
+Client
+
+    zig build client
