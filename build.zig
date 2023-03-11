@@ -24,7 +24,8 @@ pub fn build(b: *std.Build) void {
     };
     _ = cflags;
     const cxxflags = flags ++ [_][]const u8{
-        "-std=c++17", "-fno-exceptions",
+        "-std=c++17",
+        "-fno-rtti",
     };
 
     // --- vendor ---
@@ -64,9 +65,13 @@ pub fn build(b: *std.Build) void {
 
     client.linkLibrary(shared);
 
+    client.defineCMacro("PLATFORM_DESKTOP", null);
     client.addIncludePath("ext/raylib/src");
     client.linkLibrary(raylib);
     client.addIncludePath("ext/raylib-cpp/include");
+
+    ext_build.addRmlUiOpts(client);
+    client.linkLibrary(rmlui);
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -115,8 +120,6 @@ pub fn build(b: *std.Build) void {
 
     server.addIncludePath("ext/yojimbo");
     server.linkLibrary(yojimbo);
-
-    server.linkLibrary(rmlui);
 
     server.install();
 

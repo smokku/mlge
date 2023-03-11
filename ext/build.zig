@@ -52,15 +52,7 @@ pub fn addRmlUi(b: *std.Build, target: std.zig.CrossTarget, optimize: std.builti
         .optimize = optimize,
     });
 
-    rmlui.linkLibCpp();
-    rmlui.linkSystemLibrary("freetype");
-    rmlui.addIncludePath("/usr/include/freetype2");
-
-    rmlui.addIncludePath(srcdir ++ "/rmlui/Include");
-
-    rmlui.defineCMacro("RMLUI_STATIC_LIB", null);
-    rmlui.defineCMacro("RMLUI_USE_CUSTOM_RTTI", null);
-    rmlui.defineCMacro("RMLUI_NO_THIRDPARTY_CONTAINERS", null);
+    addRmlUiOpts(rmlui);
 
     var sources = std.ArrayList([]const u8).init(b.allocator);
     {
@@ -85,15 +77,27 @@ pub fn addRmlUi(b: *std.Build, target: std.zig.CrossTarget, optimize: std.builti
         }
     }
     rmlui.addCSourceFiles(sources.items, &.{
+        "-std=c++14",
         "-Wall",
         "-pedantic",
         "-Wextra",
         "-Werror",
         "-fno-rtti",
-        "-fno-exceptions",
     });
 
     return rmlui;
+}
+
+pub fn addRmlUiOpts(step: *std.Build.CompileStep) void {
+    step.linkLibCpp();
+    step.linkSystemLibrary("freetype");
+    step.addIncludePath("/usr/include/freetype2");
+
+    step.addIncludePath(srcdir ++ "/rmlui/Include");
+
+    step.defineCMacro("RMLUI_STATIC_LIB", null);
+    step.defineCMacro("RMLUI_USE_CUSTOM_RTTI", null);
+    step.defineCMacro("RMLUI_NO_THIRDPARTY_CONTAINERS", null);
 }
 
 const srcdir = struct {
