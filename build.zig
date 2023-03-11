@@ -64,6 +64,9 @@ pub fn build(b: *std.Build) void {
         "client/rml.cpp",
     }, &cxxflags);
 
+    client.addIncludePath("ext/fmt/include");
+    client.addCSourceFiles(&.{"ext/fmt/src/format.cc"}, &cxxflags);
+
     client.linkLibrary(shared);
 
     client.defineCMacro("PLATFORM_DESKTOP", null);
