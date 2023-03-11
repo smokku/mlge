@@ -61,6 +61,7 @@ pub fn build(b: *std.Build) void {
 
     client.addCSourceFiles(&.{
         "client/main.cpp",
+        "client/rml.cpp",
     }, &cxxflags);
 
     client.linkLibrary(shared);
