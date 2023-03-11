@@ -4,3 +4,6 @@
 [submodule "ext/yojimbo"]
 	path = ext/yojimbo
 	url = https://github.com/networkprotocol/yojimbo.git
+[submodule "ext/rmlui"]
+	path = ext/rmlui
+	url = https://github.com/mikke89/RmlUi.git

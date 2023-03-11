@@ -27,12 +27,14 @@ pub fn build(b: *std.Build) void {
         "-std=c++17", "-fno-exceptions",
     };
 
-    // ---- vendor ----
+    // --- vendor ---
 
     const raylib = raylib_build.addRaylib(b, target, optimize);
     const yojimbo = ext_build.addYojimbo(b, target, optimize);
+    const rmlui = ext_build.addRmlUi(b, target, optimize) catch |err|
+        std.debug.panic("RmlUi build failed: {}", .{err});
 
-    // ---- shared game logic ----
+    // --- shared game logic ---
 
     const shared = b.addStaticLibrary(.{
         .name = "shared",
@@ -47,7 +49,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // ---- game graphical client ----
+    // --- game graphical client ---
 
     const client = b.addExecutable(.{
         .name = "client",
@@ -96,7 +98,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // ---- headless game server ----
+    // --- headless game server ---
 
     const server = b.addExecutable(.{
         .name = "server",
@@ -105,15 +107,18 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    server.addIncludePath("ext/yojimbo");
-
     server.addCSourceFiles(&.{
         "server/server.cpp",
     }, &cxxflags);
 
-    // server.linkLibCPP();
-    server.linkLibrary(yojimbo);
+    server.linkLibCpp();
+
     server.linkLibrary(shared);
+
+    server.addIncludePath("ext/yojimbo");
+    server.linkLibrary(yojimbo);
+
+    server.linkLibrary(rmlui);
 
     server.install();
 
@@ -132,7 +137,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // ---- unit testing ----
+    // --- unit testing ---
 
     // Similar to creating the run step earlier, this exposes a `test` step to
     // the `zig build --help` menu, providing a way for the user to request
@@ -142,7 +147,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&client_tests.step);
     test_step.dependOn(&server_tests.step);
 
-    // ---- tooling ----
+    // --- tooling ---
 
     // const clean_cdb = b.addRemoveDirTree(cdb_path);
 
@@ -154,30 +159,28 @@ pub fn build(b: *std.Build) void {
 }
 
 fn makeCdb(b: *std.Build.Step) !void {
-    var allocator = b.dependencies.allocator;
-
     var cdb_file = try std.fs.cwd().createFile("compile_commands.json", .{ .truncate = true });
     defer cdb_file.close();
 
     _ = try cdb_file.write("[\n");
-    {
-        var dir = std.fs.cwd().openIterableDir(cdb_path, .{ .no_follow = true }) catch |err| {
-            std.debug.print("compilation database fragments dir `{s}` misssing\n", .{cdb_path});
-            return err;
-        };
 
-        var walker = try dir.walk(allocator);
-        defer walker.deinit();
+    var dir = std.fs.cwd().openIterableDir(cdb_path, .{ .no_follow = true }) catch |err| {
+        std.debug.print("compilation database fragments dir `{s}` misssing\n", .{cdb_path});
+        return err;
+    };
 
-        while (try walker.next()) |entry| {
-            const ext = std.fs.path.extension(entry.basename);
-            if (std.mem.eql(u8, ext, ".json")) {
-                var json_file = try entry.dir.openFile(entry.basename, .{});
-                defer json_file.close();
+    var walker = try dir.walk(b.dependencies.allocator);
+    defer walker.deinit();
 
-                try cdb_file.writeFileAllUnseekable(json_file, .{});
-            }
+    while (try walker.next()) |entry| {
+        const ext = std.fs.path.extension(entry.basename);
+        if (std.mem.eql(u8, ext, ".json")) {
+            var json_file = try entry.dir.openFile(entry.basename, .{});
+            defer json_file.close();
+
+            try cdb_file.writeFileAllUnseekable(json_file, .{});
         }
     }
+
     _ = try cdb_file.write("]\n");
 }
