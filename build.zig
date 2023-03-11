@@ -53,15 +53,20 @@ pub fn build(b: *std.Build) void {
 
     const client = b.addExecutable(.{
         .name = "client",
-        .root_source_file = .{ .path = "client/main.zig" },
+        // .root_source_file = .{ .path = "client/main.zig" },
         .target = target,
         .optimize = optimize,
     });
+
+    client.addCSourceFiles(&.{
+        "client/main.cpp",
+    }, &cxxflags);
 
     client.linkLibrary(shared);
 
     client.addIncludePath("ext/raylib/src");
     client.linkLibrary(raylib);
+    client.addIncludePath("ext/raylib-cpp/include");
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
@@ -90,13 +95,6 @@ pub fn build(b: *std.Build) void {
     // This will evaluate the `run` step rather than the default, which is "install".
     const client_step = b.step("client", "Run the client");
     client_step.dependOn(&client_cmd.step);
-
-    // Creates a step for unit testing.
-    const client_tests = b.addTest(.{
-        .root_source_file = .{ .path = "client/main.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
 
     // --- headless game server ---
 
@@ -144,7 +142,6 @@ pub fn build(b: *std.Build) void {
     // running the unit tests.
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&shared_tests.step);
-    test_step.dependOn(&client_tests.step);
     test_step.dependOn(&server_tests.step);
 
     // --- tooling ---

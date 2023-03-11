@@ -7,3 +7,6 @@
 [submodule "ext/rmlui"]
 	path = ext/rmlui
 	url = https://github.com/mikke89/RmlUi.git
+[submodule "ext/raylib-cpp"]
+	path = ext/raylib-cpp
+	url = https://github.com/RobLoach/raylib-cpp.git
