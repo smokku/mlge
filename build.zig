@@ -31,6 +31,8 @@ pub fn build(b: *std.Build) void {
     // --- vendor ---
 
     const raylib = raylib_build.addRaylib(b, target, optimize);
+    raylib.defineCMacro("SUPPORT_FILEFORMAT_TGA", null);
+    raylib.defineCMacro("SUPPORT_FILEFORMAT_JPG", null);
     const yojimbo = ext_build.addYojimbo(b, target, optimize);
     const rmlui = ext_build.addRmlUi(b, target, optimize) catch |err|
         std.debug.panic("RmlUi build failed: {}", .{err});

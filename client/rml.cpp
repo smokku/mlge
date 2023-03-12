@@ -1,15 +1,19 @@
 #include <RmlUi/Core.h>
 
 #include <raylib-cpp.hpp>
-
-#include "raylib.h"
+#include <vector>
 
 using namespace Rml;
 
 class GameRenderInterface : public RenderInterface
 {
+	std::vector<raylib::TextureUnmanaged> textures;
+
    public:
 	GameRenderInterface() {}
+
+	// This is a static global object, which is deleted on process shutdown.
+	// All raylib textures were already unloaded, thus we do not need to do anything in destructor.
 	virtual ~GameRenderInterface() = default;
 
 	void RenderGeometry(Vertex *vertices, int num_vertices, int *indices,
@@ -17,6 +21,8 @@ class GameRenderInterface : public RenderInterface
 						const Vector2f &translation) override;
 	void EnableScissorRegion(bool enable) override;
 	void SetScissorRegion(int x, int y, int width, int height) override;
+	bool LoadTexture(TextureHandle &texture_handle, Vector2i &texture_dimensions, const String &source) override;
+	void ReleaseTexture(TextureHandle texture) override;
 };
 
 class GameSystemInterface : public SystemInterface
@@ -41,6 +47,25 @@ void GameRenderInterface::RenderGeometry(Vertex *vertices, int num_vertices,
 										 const Vector2f &translation) {}
 void GameRenderInterface::EnableScissorRegion(bool enable) {}
 void GameRenderInterface::SetScissorRegion(int x, int y, int width, int height) {}
+
+bool GameRenderInterface::LoadTexture(TextureHandle &texture_handle, Vector2i &texture_dimensions, const String &source)
+{
+	try {
+		textures.emplace_back(raylib::TextureUnmanaged(source));
+		texture_handle	   = (Rml::TextureHandle)textures.size() - 1;
+		texture_dimensions = Rml::Vector2i(textures.back().width, textures.back().height);
+		return true;
+	}
+	catch (raylib::RaylibException e) {
+		return false;
+	}
+}
+
+void GameRenderInterface::ReleaseTexture(TextureHandle texture)
+{
+	auto erased = textures.erase(textures.begin() + (decltype(textures)::size_type)texture);
+	erased->Unload();
+}
 
 double GameSystemInterface::GetElapsedTime() { return GetTime(); }
 
