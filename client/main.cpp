@@ -4,8 +4,7 @@
 #include <cassert>
 #include <raylib-cpp.hpp>
 
-extern Rml::RenderInterface *const render_interface;
-extern Rml::SystemInterface *const system_interface;
+#include "rml.h"
 
 int main()
 {
@@ -23,8 +22,10 @@ int main()
 	//--------------------------------------------------------------------------------------
 
 	// Install the custom interfaces.
-	Rml::SetRenderInterface(render_interface);
-	Rml::SetSystemInterface(system_interface);
+	GameSystemInterface system_interface;
+	Rml::SetSystemInterface(&system_interface);
+	GameRenderInterface render_interface;
+	Rml::SetRenderInterface(&render_interface);
 
 	// RmlUi initialisation.
 	Rml::Initialise();
