@@ -100,6 +100,44 @@ pub fn addRmlUiOpts(step: *std.Build.CompileStep) void {
     step.defineCMacro("RMLUI_NO_THIRDPARTY_CONTAINERS", null);
 }
 
+pub fn addPhysicsFS(b: *std.Build, target: std.zig.CrossTarget, optimize: std.builtin.OptimizeMode) *std.Build.CompileStep {
+    const physfs = b.addStaticLibrary(.{
+        .name = "physfs",
+        .target = target,
+        .optimize = optimize,
+    });
+
+    physfs.linkLibC();
+
+    physfs.addCSourceFiles(&.{
+        srcdir ++ "/physfs/src/physfs.c",
+        srcdir ++ "/physfs/src/physfs_byteorder.c",
+        srcdir ++ "/physfs/src/physfs_unicode.c",
+        srcdir ++ "/physfs/src/physfs_platform_posix.c",
+        srcdir ++ "/physfs/src/physfs_platform_unix.c",
+        srcdir ++ "/physfs/src/physfs_platform_windows.c",
+        srcdir ++ "/physfs/src/physfs_platform_os2.c",
+        srcdir ++ "/physfs/src/physfs_platform_qnx.c",
+        srcdir ++ "/physfs/src/physfs_platform_android.c",
+        srcdir ++ "/physfs/src/physfs_archiver_dir.c",
+        srcdir ++ "/physfs/src/physfs_archiver_unpacked.c",
+        srcdir ++ "/physfs/src/physfs_archiver_grp.c",
+        srcdir ++ "/physfs/src/physfs_archiver_hog.c",
+        srcdir ++ "/physfs/src/physfs_archiver_7z.c",
+        srcdir ++ "/physfs/src/physfs_archiver_mvl.c",
+        srcdir ++ "/physfs/src/physfs_archiver_qpak.c",
+        srcdir ++ "/physfs/src/physfs_archiver_wad.c",
+        srcdir ++ "/physfs/src/physfs_archiver_zip.c",
+        srcdir ++ "/physfs/src/physfs_archiver_slb.c",
+        srcdir ++ "/physfs/src/physfs_archiver_iso9660.c",
+        srcdir ++ "/physfs/src/physfs_archiver_vdf.c",
+    }, &.{
+        "-Wall",
+    });
+
+    return physfs;
+}
+
 const srcdir = struct {
     fn getSrcDir() []const u8 {
         return std.fs.path.dirname(@src().file).?;

@@ -4,9 +4,19 @@
 #include <cassert>
 #include <raylib-cpp.hpp>
 
+#include "physfs.h"
 #include "rml.h"
 
-int main()
+unsigned char *load_file_data(const char *fileName, unsigned int *bytesRead)
+{
+	auto		   file		   = PHYSFS_openRead(fileName);
+	auto		   buffer_size = PHYSFS_fileLength(file);
+	unsigned char *buffer	   = static_cast<unsigned char *>(malloc(buffer_size));
+	*bytesRead				   = PHYSFS_readBytes(file, buffer, buffer_size);
+	return buffer;
+}
+
+int main(int, char *argv[])
 {
 	// Initialization
 	SetTraceLogLevel(LOG_DEBUG);
@@ -26,6 +36,11 @@ int main()
 	Rml::SetSystemInterface(&system_interface);
 	GameRenderInterface render_interface;
 	Rml::SetRenderInterface(&render_interface);
+	GameFileInterface file_interface(argv);
+	Rml::SetFileInterface(&file_interface);
+	SetLoadFileDataCallback(load_file_data);
+
+	file_interface.mount("resources");
 
 	// RmlUi initialisation.
 	Rml::Initialise();
@@ -37,10 +52,10 @@ int main()
 	// Rml::Debugger::Initialise(context);
 
 	// Fonts should be loaded before any documents are loaded.
-	Rml::LoadFontFace("client/assets/PressStart2P-vaV7.ttf");
+	Rml::LoadFontFace("assets/PressStart2P-vaV7.ttf");
 
 	// Load and show the document.
-	Rml::ElementDocument *document = context->LoadDocument("client/data/tutorial.rml");
+	Rml::ElementDocument *document = context->LoadDocument("data/tutorial.rml");
 	assert(document);
 	document->Show();
 

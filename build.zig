@@ -36,6 +36,7 @@ pub fn build(b: *std.Build) void {
     const yojimbo = ext_build.addYojimbo(b, target, optimize);
     const rmlui = ext_build.addRmlUi(b, target, optimize) catch |err|
         std.debug.panic("RmlUi build failed: {}", .{err});
+    const physfs = ext_build.addPhysicsFS(b, target, optimize);
 
     // --- shared game logic ---
 
@@ -78,6 +79,9 @@ pub fn build(b: *std.Build) void {
 
     ext_build.addRmlUiOpts(client);
     client.linkLibrary(rmlui);
+
+    client.addIncludePath("ext/physfs/src");
+    client.linkLibrary(physfs);
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default

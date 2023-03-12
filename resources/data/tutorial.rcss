@@ -1,6 +1,6 @@
 @spritesheet theme 
 {
-	src: /client/assets/invader.tga;
+	src: /assets/invader.tga;
 
 	window-tl: 0px 0px 133px 140px;
 	window-t:  134px 0px 1px 140px;
