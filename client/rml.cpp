@@ -1,6 +1,7 @@
 #include "rml.h"
 
 #include <physfs.h>
+#include <rlgl.h>
 
 using namespace Rml;
 
@@ -8,10 +9,46 @@ using namespace Rml;
 
 void GameRenderInterface::RenderGeometry(Vertex *vertices, int num_vertices,
 										 int *indices, int num_indices,
-										 TextureHandle	 texture,
-										 const Vector2f &translation) {}
-void GameRenderInterface::EnableScissorRegion(bool enable) {}
-void GameRenderInterface::SetScissorRegion(int x, int y, int width, int height) {}
+										 TextureHandle	 texture_handle,
+										 const Vector2f &translation)
+{
+	auto &texture = textures.at(texture_handle);
+	rlSetTexture(texture.id);
+
+	rlPushMatrix();
+	rlTranslatef(translation.x, translation.y, 0.0f);
+
+	// Texturing is only supported on RL_QUADS
+	rlBegin(RL_QUADS);
+
+	for (int index = 0; index < num_indices; index++) {
+		Vertex *vertex = vertices + indices[index];
+
+		rlColor4ub(vertex->colour.red, vertex->colour.green, vertex->colour.blue, vertex->colour.alpha);
+		rlTexCoord2f(vertex->tex_coord.x, vertex->tex_coord.y);
+		rlVertex2f(vertex->position.x, vertex->position.y);
+
+		if (index % 3 == 2)	 // duplicate every third vertex to create quad
+			rlVertex2f(vertex->position.x, vertex->position.y);
+	}
+	rlEnd();
+
+	rlPopMatrix();
+	rlSetTexture(0);
+}
+
+void GameRenderInterface::EnableScissorRegion(bool enable)
+{
+	if (enable)
+		rlEnableScissorTest();
+	else
+		rlDisableScissorTest();
+}
+
+void GameRenderInterface::SetScissorRegion(int x, int y, int width, int height)
+{
+	rlScissor(x, y, width, height);
+}
 
 bool GameRenderInterface::LoadTexture(TextureHandle &texture_handle, Vector2i &texture_dimensions, const String &source)
 {
@@ -26,6 +63,20 @@ bool GameRenderInterface::LoadTexture(TextureHandle &texture_handle, Vector2i &t
 	}
 }
 
+bool GameRenderInterface::GenerateTexture(TextureHandle &texture_handle, const byte *source, const Vector2i &source_dimensions)
+{
+	try {
+		raylib::Image image(nullptr, source_dimensions.x, source_dimensions.y);
+		textures.emplace_back(raylib::Texture(image));
+		textures.back().Update(source);
+		texture_handle = (TextureHandle)textures.size() - 1;
+		return true;
+	}
+	catch (raylib::RaylibException e) {
+		return false;
+	}
+}
+
 void GameRenderInterface::ReleaseTexture(TextureHandle texture)
 {
 	textures.erase(textures.begin() + (decltype(textures)::size_type)texture);
@@ -33,7 +84,10 @@ void GameRenderInterface::ReleaseTexture(TextureHandle texture)
 
 // --- System Interface ----------------------------------------------------
 
-double GameSystemInterface::GetElapsedTime() { return GetTime(); }
+double GameSystemInterface::GetElapsedTime()
+{
+	return GetTime();
+}
 
 bool GameSystemInterface::LogMessage(Log::Type	   type,
 									 const String &message)

@@ -94,7 +94,7 @@ int main(int, char *argv[])
 			window.ClearBackground(BLACK);
 			DrawFPS(10, 10);
 
-			textColor.DrawText("All your codebase are belong to us", 200, 200, 20);
+			textColor.DrawText("All your codebase are belong to us", 216, 200, 20);
 
 			// Set up any rendering states necessary before the render.
 			// my_renderer->PrepareRenderBuffer();
