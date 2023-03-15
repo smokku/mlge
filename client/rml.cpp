@@ -120,6 +120,57 @@ bool GameSystemInterface::LogMessage(Log::Type	   type,
 	return true;
 }
 
+void GameSystemInterface::SetMouseCursor(const String &cursor_name)
+{
+	MouseCursor cursor = MouseCursor::MOUSE_CURSOR_DEFAULT;
+
+	if (cursor_name.rfind("rmlui-scroll-", 0) == 0) {
+		cursor = MouseCursor::MOUSE_CURSOR_RESIZE_ALL;
+	}
+
+	if (cursor_name == "") {
+		cursor = MouseCursor::MOUSE_CURSOR_ARROW;
+	}
+	if (cursor_name == "text") {
+		cursor = MouseCursor::MOUSE_CURSOR_IBEAM;
+	}
+	if (cursor_name == "crosshair") {
+		cursor = MouseCursor::MOUSE_CURSOR_CROSSHAIR;
+	}
+	if (cursor_name == "pointer" || cursor_name == "hand") {
+		cursor = MouseCursor::MOUSE_CURSOR_POINTING_HAND;
+	}
+	if (cursor_name == "col-resize" || cursor_name == "ew-resize") {
+		cursor = MouseCursor::MOUSE_CURSOR_RESIZE_EW;
+	}
+	if (cursor_name == "row-resize" || cursor_name == "ns-resize") {
+		cursor = MouseCursor::MOUSE_CURSOR_RESIZE_NS;
+	}
+	if (cursor_name == "nwse-resize") {
+		cursor = MouseCursor::MOUSE_CURSOR_RESIZE_NWSE;
+	}
+	if (cursor_name == "nesw-resize") {
+		cursor = MouseCursor::MOUSE_CURSOR_RESIZE_NESW;
+	}
+	if (cursor_name == "all-scroll" || cursor_name == "move") {
+		cursor = MouseCursor::MOUSE_CURSOR_RESIZE_ALL;
+	}
+	if (cursor_name == "not-allowed") {
+		cursor = MouseCursor::MOUSE_CURSOR_NOT_ALLOWED;
+	}
+
+	::SetMouseCursor(cursor);
+}
+
+void GameSystemInterface::SetClipboardText(const String &text)
+{
+	::SetClipboardText(text.c_str());
+}
+void GameSystemInterface::GetClipboardText(String &text)
+{
+	text = ::GetClipboardText();
+}
+
 // --- File Interface ----------------------------------------------------
 
 GameFileInterface::GameFileInterface(char *argv[])
