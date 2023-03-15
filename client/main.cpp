@@ -1,5 +1,5 @@
 #include <RmlUi/Core.h>
-// #include <RmlUi/Debugger.h>
+#include <RmlUi/Debugger.h>
 
 #include <cassert>
 #include <raylib-cpp.hpp>
@@ -49,7 +49,7 @@ int main(int, char *argv[])
 	Rml::Context *context = Rml::CreateContext("main", Rml::Vector2i(screenWidth, screenHeight));
 	assert(context);
 
-	// Rml::Debugger::Initialise(context);
+	Rml::Debugger::Initialise(context);
 
 	// Fonts should be loaded before any documents are loaded.
 	Rml::LoadFontFace("assets/PressStart2P-vaV7.ttf");
@@ -63,14 +63,43 @@ int main(int, char *argv[])
 	while (!window.ShouldClose()) {	 // Detect window close button or ESC key
 
 		// Submit input events before the call to Context::Update().
+
+		while (int key = GetCharPressed()) {
+			context->ProcessTextInput(key);
+		}
+
+		int key_modifier_state = 0;
+		if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) key_modifier_state |= Rml::Input::KeyModifier::KM_CTRL;
+		if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) key_modifier_state |= Rml::Input::KeyModifier::KM_SHIFT;
+		if (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) key_modifier_state |= Rml::Input::KeyModifier::KM_ALT;
+		if (IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) key_modifier_state |= Rml::Input::KeyModifier::KM_META;
+		if (IsKeyDown(KEY_CAPS_LOCK)) key_modifier_state |= Rml::Input::KeyModifier::KM_CAPSLOCK;
+		if (IsKeyDown(KEY_NUM_LOCK)) key_modifier_state |= Rml::Input::KeyModifier::KM_NUMLOCK;
+		if (IsKeyDown(KEY_SCROLL_LOCK)) key_modifier_state |= Rml::Input::KeyModifier::KM_SCROLLLOCK;
+
+		while (int key = GetKeyPressed()) {
+			context->ProcessKeyDown(raylib_key_to_identifier(static_cast<KeyboardKey>(key)), key_modifier_state);
+		}
+
 		auto mouse_delta = GetMouseDelta();
 		if (mouse_delta.x || mouse_delta.y) {
-			context->ProcessMouseMove(GetMouseX(), GetMouseY(), 0);
+			context->ProcessMouseMove(GetMouseX(), GetMouseY(), key_modifier_state);
 		}
+
+		for (const int button : {0, 1, 2}) {
+			if (IsMouseButtonPressed(button)) {
+				context->ProcessMouseButtonDown(button, key_modifier_state);
+			}
+			if (IsMouseButtonReleased(button)) {
+				context->ProcessMouseButtonUp(button, key_modifier_state);
+			}
+		}
+
+		context->ProcessMouseWheel(GetMouseWheelMove(), key_modifier_state);
 
 		// Toggle the debugger with a key binding.
 		if (IsKeyPressed(KEY_F8)) {
-			// Rml::Debugger::SetVisible(!Rml::Debugger::IsVisible());
+			Rml::Debugger::SetVisible(!Rml::Debugger::IsVisible());
 		}
 
 		// Update

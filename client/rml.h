@@ -27,6 +27,8 @@ class GameRenderInterface : public Rml::RenderInterface
 	void ReleaseTexture(Rml::TextureHandle texture) override;
 };
 
+Rml::Input::KeyIdentifier raylib_key_to_identifier(KeyboardKey key);
+
 class GameSystemInterface : public Rml::SystemInterface
 {
    public:

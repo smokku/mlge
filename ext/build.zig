@@ -55,8 +55,11 @@ pub fn addRmlUi(b: *std.Build, target: std.zig.CrossTarget, optimize: std.builti
     addRmlUiOpts(rmlui);
 
     var sources = std.ArrayList([]const u8).init(b.allocator);
-    {
-        const prefix = srcdir ++ "/rmlui/Source/Core";
+    const prefixes = [_][]const u8{
+        srcdir ++ "/rmlui/Source/Core",
+        srcdir ++ "/rmlui/Source/Debugger",
+    };
+    for (prefixes) |prefix| {
         var path: [std.fs.MAX_PATH_BYTES]u8 = .{};
         std.mem.copy(u8, &path, prefix);
         path[prefix.len] = '/';
