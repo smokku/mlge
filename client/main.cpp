@@ -126,13 +126,11 @@ int main(int, char *argv[])
 			textColor.DrawText("All your codebase are belong to us", 216, 200, 20);
 
 			// Set up any rendering states necessary before the render.
-			// my_renderer->PrepareRenderBuffer();
-
+			render_interface.BeginFrame();
 			// Render the user interface on top of the application.
 			context->Render();
-
 			// Present the rendered frame.
-			// my_renderer->PresentRenderBuffer();
+			render_interface.EndFrame();
 		}
 		EndDrawing();
 		//----------------------------------------------------------------------------------

@@ -1,28 +1,66 @@
 #include "rml.h"
 
 #include <physfs.h>
-#include <rlgl.h>
 
 using namespace Rml;
 
 // --- Render Interface ----------------------------------------------------
+
+GameRenderInterface::GameRenderInterface()
+	: default_texture_id{0},
+	  scissor{false},
+	  scissor_x{0},
+	  scissor_y{0},
+	  scissor_width{0},
+	  scissor_height{0},
+	  transform{nullptr}
+{
+	batch = rlLoadRenderBatch(RL_DEFAULT_BATCH_BUFFERS, RL_DEFAULT_BATCH_BUFFER_ELEMENTS);
+}
+
+GameRenderInterface::~GameRenderInterface()
+{
+	rlUnloadRenderBatch(batch);
+}
+
+void GameRenderInterface::BeginFrame()
+{
+	rlSetRenderBatchActive(&batch);
+	default_texture_id = batch.draws[0].textureId;
+}
+
+void GameRenderInterface::EndFrame()
+{
+	rlSetRenderBatchActive(nullptr);
+}
 
 void GameRenderInterface::RenderGeometry(Vertex *vertices, int num_vertices,
 										 int *indices, int num_indices,
 										 TextureHandle	 texture_handle,
 										 const Vector2f &translation)
 {
-	auto &texture = textures.at(texture_handle);
-	rlSetTexture(texture.id);
+	if (scissor) BeginScissorMode(scissor_x, scissor_y, scissor_width, scissor_height);
 
 	rlPushMatrix();
+
 	rlTranslatef(translation.x, translation.y, 0.0f);
+	if (transform) {
+		rlMultMatrixf(transform->data());
+	}
 
 	// Texturing is only supported on RL_QUADS
 	rlBegin(RL_QUADS);
 
+	if (texture_handle)
+		rlSetTexture(reinterpret_cast<raylib::Texture *>(texture_handle)->id);
+	else
+		rlSetTexture(default_texture_id);
+
 	for (int index = 0; index < num_indices; index++) {
-		Vertex *vertex = vertices + indices[index];
+		auto vertex_index = indices[index];
+		if (vertex_index > num_vertices) continue;
+
+		auto vertex = &vertices[vertex_index];
 
 		rlColor4ub(vertex->colour.red, vertex->colour.green, vertex->colour.blue, vertex->colour.alpha);
 		rlTexCoord2f(vertex->tex_coord.x, vertex->tex_coord.y);
@@ -35,27 +73,28 @@ void GameRenderInterface::RenderGeometry(Vertex *vertices, int num_vertices,
 
 	rlPopMatrix();
 	rlSetTexture(0);
+	if (scissor) EndScissorMode();
 }
 
 void GameRenderInterface::EnableScissorRegion(bool enable)
 {
-	if (enable)
-		rlEnableScissorTest();
-	else
-		rlDisableScissorTest();
+	scissor = enable;
 }
 
 void GameRenderInterface::SetScissorRegion(int x, int y, int width, int height)
 {
-	rlScissor(x, y, width, height);
+	scissor_x	   = x;
+	scissor_y	   = y;
+	scissor_width  = width;
+	scissor_height = height;
 }
 
 bool GameRenderInterface::LoadTexture(TextureHandle &texture_handle, Vector2i &texture_dimensions, const String &source)
 {
 	try {
-		textures.emplace_back(raylib::Texture(source));
-		texture_handle	   = (TextureHandle)textures.size() - 1;
-		texture_dimensions = Vector2i(textures.back().width, textures.back().height);
+		auto texture	   = new raylib::Texture(source);
+		texture_handle	   = reinterpret_cast<TextureHandle>(texture);
+		texture_dimensions = Vector2i(texture->width, texture->height);
 		return true;
 	}
 	catch (raylib::RaylibException e) {
@@ -67,9 +106,9 @@ bool GameRenderInterface::GenerateTexture(TextureHandle &texture_handle, const b
 {
 	try {
 		raylib::Image image(nullptr, source_dimensions.x, source_dimensions.y);
-		textures.emplace_back(raylib::Texture(image));
-		textures.back().Update(source);
-		texture_handle = (TextureHandle)textures.size() - 1;
+		auto		  texture = new raylib::Texture(image);
+		texture->Update(source);
+		texture_handle = reinterpret_cast<TextureHandle>(texture);
 		return true;
 	}
 	catch (raylib::RaylibException e) {
@@ -77,9 +116,14 @@ bool GameRenderInterface::GenerateTexture(TextureHandle &texture_handle, const b
 	}
 }
 
-void GameRenderInterface::ReleaseTexture(TextureHandle texture)
+void GameRenderInterface::ReleaseTexture(TextureHandle texture_handle)
 {
-	textures.erase(textures.begin() + (decltype(textures)::size_type)texture);
+	delete reinterpret_cast<raylib::Texture *>(texture_handle);
+}
+
+void GameRenderInterface::SetTransform(const Matrix4f *transform)
+{
+	this->transform = transform;
 }
 
 // --- System Interface ----------------------------------------------------

@@ -3,13 +3,22 @@
 #include <raylib-cpp.hpp>
 #include <vector>
 
+#include "rlgl.h"
+
 class GameRenderInterface : public Rml::RenderInterface
 {
-	std::vector<raylib::Texture> textures;
+	rlRenderBatch		 batch;
+	unsigned int		 default_texture_id;
+	bool				 scissor;
+	int					 scissor_x, scissor_y, scissor_width, scissor_height;
+	const Rml::Matrix4f *transform;
 
    public:
-	GameRenderInterface() {}
-	virtual ~GameRenderInterface() = default;
+	GameRenderInterface();
+	virtual ~GameRenderInterface();
+
+	void BeginFrame();
+	void EndFrame();
 
 	void RenderGeometry(Rml::Vertex *vertices, int num_vertices, int *indices,
 						int num_indices, Rml::TextureHandle texture,
@@ -25,6 +34,8 @@ class GameRenderInterface : public Rml::RenderInterface
 						 const Rml::byte	 *source,
 						 const Rml::Vector2i &source_dimensions) override;
 	void ReleaseTexture(Rml::TextureHandle texture) override;
+
+	void SetTransform(const Rml::Matrix4f *transform) override;
 };
 
 Rml::Input::KeyIdentifier raylib_key_to_identifier(KeyboardKey key);
